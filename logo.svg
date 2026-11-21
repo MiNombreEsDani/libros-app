@@ -1,53 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Fondo -->
   <rect width="512" height="512" fill="#ffffff"/>
-
-  <!-- Antena -->
-  <line x1="256" y1="104" x2="256" y2="66" stroke="#d62828" stroke-width="12" stroke-linecap="round"/>
-  <circle cx="256" cy="56" r="17" fill="#1d6fd8"/>
-  <circle cx="251" cy="51" r="5" fill="#ffffff" opacity=".8"/>
-
-  <!-- Orejas -->
-  <rect x="112" y="150" width="30" height="74" rx="12" fill="#1d6fd8"/>
-  <rect x="370" y="150" width="30" height="74" rx="12" fill="#1d6fd8"/>
-
-  <!-- Cabeza -->
-  <rect x="134" y="100" width="244" height="176" rx="56" fill="#d62828"/>
-  <!-- Pantalla de la cara -->
-  <rect x="166" y="134" width="180" height="108" rx="40" fill="#ffffff"/>
-  <!-- Ojos -->
-  <circle cx="218" cy="180" r="17" fill="#1d6fd8"/>
-  <circle cx="294" cy="180" r="17" fill="#1d6fd8"/>
-  <circle cx="223" cy="174" r="5" fill="#ffffff"/>
-  <circle cx="299" cy="174" r="5" fill="#ffffff"/>
-  <!-- Sonrisa -->
-  <path d="M230 212 Q256 232 282 212" fill="none" stroke="#d62828" stroke-width="9" stroke-linecap="round"/>
-
-  <!-- Cuello -->
-  <rect x="232" y="270" width="48" height="26" rx="8" fill="#b71f1f"/>
-
-  <!-- Cuerpo -->
-  <rect x="146" y="288" width="220" height="164" rx="48" fill="#d62828"/>
-
-  <!-- Libro abierto (verde) -->
-  <path d="M256 344 C222 322 172 318 120 330 L120 448 C172 436 222 440 256 462 Z" fill="#2ba84a"/>
-  <path d="M256 344 C290 322 340 318 392 330 L392 448 C340 436 290 440 256 462 Z" fill="#2ba84a"/>
-  <!-- Páginas -->
-  <path d="M248 352 C220 336 178 332 136 340 L136 432 C178 424 220 428 248 446 Z" fill="#e9f7ed"/>
-  <path d="M264 352 C292 336 334 332 376 340 L376 432 C334 424 292 428 264 446 Z" fill="#e9f7ed"/>
-  <!-- Líneas de texto -->
-  <g fill="none" stroke="#9fd8b0" stroke-width="6" stroke-linecap="round">
-    <path d="M160 364 Q196 358 230 370"/>
-    <path d="M160 386 Q196 380 230 392"/>
-    <path d="M160 408 Q196 402 230 414"/>
-    <path d="M282 370 Q316 358 352 364"/>
-    <path d="M282 392 Q316 380 352 386"/>
-    <path d="M282 414 Q316 402 352 408"/>
+  <g fill="#ffffff" stroke="#111111" stroke-width="11" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Hombros y torso -->
+    <path d="M116 470 L116 392 C116 344 150 312 200 306 L312 306 C362 312 396 344 396 392 L396 470"/>
+    <!-- Cuello -->
+    <path d="M230 262 L230 306 M282 262 L282 306"/>
+    <line x1="224" y1="284" x2="288" y2="284"/>
+    <!-- Antena -->
+    <line x1="256" y1="96" x2="256" y2="70"/>
+    <rect x="244" y="58" width="24" height="14" rx="5"/>
+    <!-- Laterales del casco -->
+    <rect x="160" y="150" width="22" height="64" rx="8"/>
+    <rect x="330" y="150" width="22" height="64" rx="8"/>
+    <!-- Casco -->
+    <path d="M182 250 L182 160 C182 118 214 96 256 96 C298 96 330 118 330 160 L330 250 C330 262 320 270 308 270 L204 270 C192 270 182 262 182 250 Z"/>
+    <!-- Línea de la mandíbula -->
+    <path d="M206 234 L306 234"/>
   </g>
-  <!-- Lomo -->
-  <line x1="256" y1="346" x2="256" y2="460" stroke="#1f7f37" stroke-width="6" stroke-linecap="round"/>
+  <!-- Visor -->
+  <rect x="200" y="150" width="112" height="46" rx="18" fill="#111111"/>
+  <rect x="218" y="169" width="76" height="8" rx="4" fill="#d62828"/>
 
-  <!-- Manos (azul) sujetando el libro -->
-  <circle cx="122" cy="392" r="24" fill="#1d6fd8"/>
-  <circle cx="390" cy="392" r="24" fill="#1d6fd8"/>
+  <!-- Libro: solo la portada, negro (vertical, con lomo y marcapáginas) -->
+  <path d="M276 470 L276 500 L286 492 L296 500 L296 470 Z" fill="#d62828"/>
+  <rect x="184" y="304" width="144" height="170" rx="7" fill="#111111"/>
+  <rect x="184" y="304" width="20" height="170" rx="5" fill="#2b2b2b"/>
+  <line x1="204" y1="306" x2="204" y2="472" stroke="#000" stroke-width="2"/>
+  <line x1="232" y1="352" x2="300" y2="352" stroke="#ffffff" stroke-opacity=".7" stroke-width="5" stroke-linecap="round"/>
+  <line x1="244" y1="368" x2="288" y2="368" stroke="#ffffff" stroke-opacity=".4" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Manos sujetando el libro por los lados -->
+  <g fill="#ffffff" stroke="#111111" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="148" y="372" width="54" height="76" rx="16"/>
+    <path d="M168 392 L202 392 M168 410 L202 410 M168 428 L202 428"/>
+    <rect x="310" y="372" width="54" height="76" rx="16"/>
+    <path d="M310 392 L344 392 M310 410 L344 410 M310 428 L344 428"/>
+  </g>
 </svg>
