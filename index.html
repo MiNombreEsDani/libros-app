@@ -81,6 +81,12 @@
     font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
   nav button .ic { display: block; }
   nav button.active { color: var(--red); font-weight: 600; }
+  .login { text-align: center; padding: 28px 20px; margin-top: 20px; }
+  .login-logo { width: 84px; height: 84px; border-radius: 22px; box-shadow: 0 1px 6px rgba(0,0,0,.12); }
+  .login h2 { margin: 14px 0 6px; font-size: 22px; }
+  .login p { margin: 0 auto 18px; max-width: 320px; }
+  #tg-widget { min-height: 44px; display: flex; justify-content: center; }
+  body.web-login header, body.web-login nav { display: none; }
   .spinner { width: 22px; height: 22px; border: 3px solid var(--sep); border-top-color: var(--btn);
     border-radius: 50%; animation: spin 1s linear infinite; margin: 40px auto; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -98,6 +104,15 @@
 <main>
   <div id="loading"><div class="spinner"></div></div>
   <div id="fatal" class="card notice err" hidden></div>
+
+  <!-- ACCESO desde el navegador (fuera de Telegram) -->
+  <section id="login" class="card login" hidden>
+    <img src="logo-192.png" alt="" class="login-logo">
+    <h2>Entra en Libros</h2>
+    <p>Inicia sesión con tu cuenta de Telegram. Solo hace falta la primera vez: después entrarás directamente.</p>
+    <div id="tg-widget"></div>
+    <p id="login-msg" class="muted"></p>
+  </section>
 
   <!-- PEDIR -->
   <section id="page-pedir" class="page">
@@ -124,6 +139,15 @@
     <div id="kindle-info" class="card row" hidden>
       <div><div class="muted">Se enviará a</div><div id="kindle-actual"></div></div>
       <button class="link" id="btn-cambiar-kindle">Cambiar</button>
+    </div>
+
+    <div id="install-card" class="card row" hidden>
+      <div><b>💻 Instalar la app</b><div class="muted" id="install-txt">Tenla en el escritorio o en la pantalla de inicio</div></div>
+      <button class="link" id="btn-install">Instalar</button>
+    </div>
+
+    <div id="logout-card" class="row" style="justify-content:center;padding:8px 0" hidden>
+      <button class="link" id="btn-logout" style="color:var(--hint)">Cerrar sesión</button>
     </div>
 
     <div id="home-card" class="card row" hidden>
@@ -166,13 +190,26 @@ const ESTADOS = {
 };
 const EN_CAMINO = ["nuevo", "buscando", "solicitado", "descargado"];
 
+// Sesión del navegador (Telegram Login Widget), guardada en este dispositivo
+const LOGIN_KEY = "libros_login";
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem(LOGIN_KEY) || "null"); } catch { return null; } },
+  set(v) { try { localStorage.setItem(LOGIN_KEY, JSON.stringify(v)); } catch {} },
+  clear() { try { localStorage.removeItem(LOGIN_KEY); } catch {} },
+};
+const enTelegram = () => !!tg?.initData;
+
 async function api(action, body = {}) {
+  const headers = { "content-type": "application/json" };
+  if (enTelegram()) headers["x-telegram-init-data"] = tg.initData;
+  else if (store.get()) headers["x-telegram-login"] = JSON.stringify(store.get());
   const r = await fetch(API, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-telegram-init-data": tg?.initData || "" },
+    headers,
     body: JSON.stringify({ action, ...body }),
   });
   const data = await r.json().catch(() => ({ error: "Respuesta no válida del servidor" }));
+  if (r.status === 401 && !enTelegram() && action !== "info") { store.clear(); mostrarLogin(data.error); throw new Error(data.error); }
   if (!r.ok) throw new Error(data.error || "Error " + r.status);
   return data;
 }
@@ -312,26 +349,86 @@ function setupHomeScreen() {
   tg.onEvent?.("homeScreenAdded", () => { $("home-card").hidden = true; toast("✅ Acceso directo añadido"); });
 }
 
-// ------------------------------------------------------------ Inicio
-(async function init() {
-  tg?.ready(); tg?.expand();
-  try { tg?.setHeaderColor?.("secondary_bg_color"); tg?.setBackgroundColor?.("secondary_bg_color"); } catch {}
-  if (!tg?.initData) {
-    $("loading").hidden = true;
-    $("fatal").hidden = false;
-    $("fatal").innerHTML = "<b>Abre esta app desde Telegram</b><p style='margin:4px 0 0'>Entra en el chat del bot de libros y pulsa el botón «Libros».</p>";
-    return;
+// ------------------------------------------------------------ Navegador: acceso e instalación
+async function mostrarLogin(msg) {
+  document.body.classList.add("web-login");
+  document.querySelectorAll(".page").forEach((x) => x.classList.remove("active"));
+  clearInterval(pollTimer);
+  $("loading").hidden = true; $("fatal").hidden = true; $("login").hidden = false;
+  $("login-msg").textContent = msg && msg !== "Inicia sesión para continuar." ? msg : "";
+  if ($("tg-widget").childElementCount) return;
+  try {
+    const { bot_username } = await api("info");
+    if (!bot_username) {
+      $("login-msg").textContent = "El bot todavía no se ha conectado. Arranca el bot en el ordenador y recarga esta página.";
+      return;
+    }
+    const sc = document.createElement("script");
+    sc.async = true;
+    sc.src = "https://telegram.org/js/telegram-widget.js?22";
+    sc.dataset.telegramLogin = bot_username;
+    sc.dataset.size = "large";
+    sc.dataset.radius = "12";
+    sc.dataset.requestAccess = "write";
+    sc.dataset.onauth = "onTelegramAuth(user)";
+    $("tg-widget").appendChild(sc);
+  } catch (e) { $("login-msg").textContent = "No se pudo cargar el acceso: " + e.message; }
+}
+
+window.onTelegramAuth = (user) => {
+  store.set(user);
+  document.body.classList.remove("web-login");
+  $("login").hidden = true;
+  arrancar();
+};
+
+let installEvt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault(); installEvt = e;
+  if (!enTelegram() && perfil) $("install-card").hidden = false;
+});
+window.addEventListener("appinstalled", () => { $("install-card").hidden = true; toast("✅ App instalada"); });
+
+function setupWeb() {
+  $("logout-card").hidden = false;
+  $("btn-logout").onclick = () => { store.clear(); location.reload(); };
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (standalone) return;
+  if (installEvt) $("install-card").hidden = false;
+  else if (ios) {
+    $("install-card").hidden = false;
+    $("install-txt").textContent = "En Safari: botón Compartir → «Añadir a pantalla de inicio»";
+    $("btn-install").hidden = true;
   }
+  $("btn-install").onclick = async () => {
+    if (!installEvt) { toast("Usa el menú del navegador → «Instalar Libros»"); return; }
+    installEvt.prompt(); await installEvt.userChoice; installEvt = null;
+  };
+}
+
+// ------------------------------------------------------------ Inicio
+async function arrancar() {
+  $("loading").hidden = false;
   try {
     perfil = await api("me");
     $("loading").hidden = true;
     show("pedir");
-    setupHomeScreen();
+    if (enTelegram()) setupHomeScreen(); else setupWeb();
   } catch (e) {
     $("loading").hidden = true;
+    if (!$("login").hidden) return;
     $("fatal").hidden = false;
     $("fatal").innerHTML = `<b>No se pudo conectar</b><p style="margin:4px 0 0">${esc(e.message)}</p>`;
   }
+}
+
+(function init() {
+  try { tg?.ready?.(); tg?.expand?.(); } catch {}
+  try { tg?.setHeaderColor?.("secondary_bg_color"); tg?.setBackgroundColor?.("secondary_bg_color"); } catch {}
+  if ("serviceWorker" in navigator && !enTelegram()) navigator.serviceWorker.register("sw.js").catch(() => {});
+  if (!enTelegram() && !store.get()) { mostrarLogin(); return; }
+  arrancar();
 })();
 </script>
 </body>
