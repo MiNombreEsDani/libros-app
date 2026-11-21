@@ -177,7 +177,7 @@ async function botAction(action: string, body: any) {
     }
 
     case "claim": {
-      const { data: pedidos, error } = await db.rpc("reclamar_pedidos");
+      const { data: pedidos, error } = await db.rpc("reclamar_pedidos_v2");
       if (error) throw new HttpError(500, error.message);
       const { data: nuevos } = await db.from("usuarios")
         .update({ avisado: true }).eq("avisado", false).eq("estado", "pendiente")
