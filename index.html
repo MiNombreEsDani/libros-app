@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Libros</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: var(--tg-theme-bg-color, #faf7f2);
+    --bg2: var(--tg-theme-secondary-bg-color, #f0ebe2);
+    --text: var(--tg-theme-text-color, #1f1b16);
+    --hint: var(--tg-theme-hint-color, #8a8175);
+    --link: var(--tg-theme-link-color, #8a5a2b);
+    --btn: var(--tg-theme-button-color, #8a5a2b);
+    --btn-text: var(--tg-theme-button-text-color, #ffffff);
+    --card: var(--tg-theme-section-bg-color, var(--bg));
+    --sep: color-mix(in srgb, var(--hint) 25%, transparent);
+    --ok: #2e7d4f; --warn: #b7791f; --err: #c0392b; --info: #3b6ea8;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; background: var(--bg2); color: var(--text);
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); min-height: 100vh; }
+  header { padding: 22px 18px 6px; }
+  header h1 { margin: 0; font-size: 26px; letter-spacing: -0.02em; }
+  header p { margin: 4px 0 0; color: var(--hint); font-size: 14px; }
+  main { padding: 8px 14px 20px; }
+  .page { display: none; } .page.active { display: block; }
+  .card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+  .card h2 { margin: 0 0 4px; font-size: 17px; }
+  .card p { margin: 0 0 12px; color: var(--hint); font-size: 14px; }
+  label { display: block; font-size: 13px; color: var(--hint); margin: 10px 0 6px; }
+  input { width: 100%; padding: 13px 14px; font-size: 16px; color: var(--text);
+    background: var(--bg2); border: 1px solid transparent; border-radius: 10px; outline: none; }
+  input:focus { border-color: var(--btn); }
+  button.primary { width: 100%; margin-top: 16px; padding: 14px; border: 0; border-radius: 12px;
+    background: var(--btn); color: var(--btn-text); font-size: 16px; font-weight: 600; }
+  button.primary:disabled { opacity: .5; }
+  button.link { background: none; border: 0; color: var(--link); font-size: 14px; padding: 0; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .muted { color: var(--hint); font-size: 13px; }
+  .notice { border-left: 4px solid var(--warn); }
+  .notice.err { border-left-color: var(--err); }
+  .toast { position: fixed; left: 14px; right: 14px; bottom: calc(86px + env(safe-area-inset-bottom));
+    background: var(--text); color: var(--bg); padding: 12px 14px; border-radius: 12px; font-size: 14px;
+    opacity: 0; transform: translateY(10px); transition: .25s; pointer-events: none; z-index: 20; }
+  .toast.show { opacity: 1; transform: none; }
+
+  .chips { display: flex; gap: 8px; margin: 0 0 12px; overflow-x: auto; }
+  .chip { flex: none; border: 0; padding: 8px 14px; border-radius: 999px; font-size: 14px;
+    background: var(--card); color: var(--text); }
+  .chip.active { background: var(--btn); color: var(--btn-text); }
+  .book { display: flex; gap: 12px; align-items: flex-start; }
+  .cover { flex: none; width: 44px; height: 60px; border-radius: 6px; display: grid; place-items: center;
+    color: #fff; font-weight: 700; font-size: 18px; box-shadow: inset -4px 0 0 rgba(0,0,0,.15); }
+  .book .info { flex: 1; min-width: 0; }
+  .book .t { font-weight: 600; overflow-wrap: anywhere; }
+  .book .a { color: var(--hint); font-size: 14px; }
+  .book .paso { font-size: 13px; color: var(--hint); margin-top: 6px; }
+  .badge { display: inline-block; margin-top: 6px; padding: 2px 9px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; color: #fff; }
+  .empty { text-align: center; color: var(--hint); padding: 40px 20px; }
+  .empty .big { font-size: 40px; }
+
+  nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: var(--card);
+    border-top: 1px solid var(--sep); padding-bottom: env(safe-area-inset-bottom); z-index: 10; }
+  nav button { flex: 1; border: 0; background: none; color: var(--hint); padding: 10px 0 12px;
+    font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  nav button .ic { font-size: 22px; line-height: 1; }
+  nav button.active { color: var(--btn); font-weight: 600; }
+  .spinner { width: 22px; height: 22px; border: 3px solid var(--sep); border-top-color: var(--btn);
+    border-radius: 50%; animation: spin 1s linear infinite; margin: 40px auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Pedir libro</h1>
+  <p id="subtitle">Lo buscamos y te llega al Kindle</p>
+</header>
+
+<main>
+  <div id="loading"><div class="spinner"></div></div>
+  <div id="fatal" class="card notice err" hidden></div>
+
+  <!-- PEDIR -->
+  <section id="page-pedir" class="page">
+    <div id="aviso-acceso" class="card notice" hidden></div>
+
+    <div id="kindle-setup" class="card" hidden>
+      <h2>📬 Tu correo de Kindle</h2>
+      <p>Lo encuentras en Amazon → Gestionar contenido y dispositivos → Preferencias → Configuración de documentos personales.</p>
+      <label for="kindle">Correo @kindle.com</label>
+      <input id="kindle" type="email" inputmode="email" autocomplete="off" placeholder="tunombre@kindle.com">
+      <p class="muted" style="margin-top:10px">En esa misma página, añade <b>bibliotecario797@gmail.com</b> a la lista de correos aprobados. Si no, Amazon no dejará pasar los libros.</p>
+      <button class="primary" id="btn-kindle">Guardar</button>
+      <button class="link" id="btn-kindle-cancel" style="margin-top:12px" hidden>Cancelar</button>
+    </div>
+
+    <form id="form-pedir" class="card" hidden>
+      <label for="titulo">Título</label>
+      <input id="titulo" required maxlength="300" placeholder="Ej. El nombre del viento" autocomplete="off">
+      <label for="autor">Autor <span class="muted">(opcional, ayuda a encontrarlo)</span></label>
+      <input id="autor" maxlength="200" placeholder="Ej. Patrick Rothfuss" autocomplete="off">
+      <button class="primary" id="btn-pedir" type="submit">Pedir libro</button>
+    </form>
+
+    <div id="kindle-info" class="card row" hidden>
+      <div><div class="muted">Se enviará a</div><div id="kindle-actual"></div></div>
+      <button class="link" id="btn-cambiar-kindle">Cambiar</button>
+    </div>
+
+    <div id="home-card" class="card row" hidden>
+      <div><b>📲 Acceso directo</b><div class="muted">Añade la app a la pantalla de inicio</div></div>
+      <button class="link" id="btn-home">Añadir</button>
+    </div>
+  </section>
+
+  <!-- BIBLIOTECA -->
+  <section id="page-biblioteca" class="page">
+    <div class="chips">
+      <button class="chip active" data-f="todos">Todos</button>
+      <button class="chip" data-f="camino">En camino</button>
+      <button class="chip" data-f="guardados">Guardados</button>
+    </div>
+    <div id="lista"></div>
+  </section>
+</main>
+
+<nav>
+  <button data-page="pedir" class="active"><span class="ic">➕</span>Pedir</button>
+  <button data-page="biblioteca"><span class="ic">📚</span>Biblioteca</button>
+</nav>
+<div id="toast" class="toast"></div>
+
+<script>
+const API = "https://lsjvizihvdmkusypvlei.supabase.co/functions/v1/api";
+const tg = window.Telegram?.WebApp;
+const $ = (id) => document.getElementById(id);
+let perfil = null, pedidos = [], filtro = "todos", pagina = "pedir", pollTimer = null;
+
+const ESTADOS = {
+  nuevo:      { txt: "En cola",          color: "var(--hint)" },
+  buscando:   { txt: "Buscando",         color: "var(--info)" },
+  solicitado: { txt: "Pedido al grupo",  color: "var(--warn)" },
+  descargado: { txt: "Descargado",       color: "var(--info)" },
+  enviado:    { txt: "En tu Kindle",     color: "var(--ok)" },
+  error:      { txt: "Error",            color: "var(--err)" },
+  cancelado:  { txt: "Cancelado",        color: "var(--hint)" },
+};
+const EN_CAMINO = ["nuevo", "buscando", "solicitado", "descargado"];
+
+async function api(action, body = {}) {
+  const r = await fetch(API, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-telegram-init-data": tg?.initData || "" },
+    body: JSON.stringify({ action, ...body }),
+  });
+  const data = await r.json().catch(() => ({ error: "Respuesta no válida del servidor" }));
+  if (!r.ok) throw new Error(data.error || "Error " + r.status);
+  return data;
+}
+
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 3000);
+}
+const haptic = (type) => { try { tg?.HapticFeedback?.notificationOccurred(type); } catch {} };
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// ------------------------------------------------------------ Pedir
+function renderPedir() {
+  const aviso = $("aviso-acceso");
+  const aprobado = perfil.estado === "aprobado";
+  aviso.hidden = aprobado;
+  if (!aprobado) {
+    aviso.classList.toggle("err", perfil.estado === "rechazado");
+    aviso.innerHTML = perfil.estado === "rechazado"
+      ? "<b>Acceso denegado.</b><p style='margin:4px 0 0'>Habla con Dani si crees que es un error.</p>"
+      : "<b>⏳ Esperando aprobación</b><p style='margin:4px 0 0'>Dani ha recibido tu solicitud. Mientras tanto, puedes dejar listo tu correo de Kindle.</p>";
+  }
+  const sinKindle = !perfil.kindle_email;
+  const editando = $("kindle-setup").dataset.editing === "1";
+  $("kindle-setup").hidden = !(sinKindle || editando);
+  $("btn-kindle-cancel").hidden = sinKindle;
+  $("form-pedir").hidden = sinKindle || editando || !aprobado;
+  $("kindle-info").hidden = sinKindle || editando;
+  $("kindle-actual").textContent = perfil.kindle_email || "";
+}
+
+$("btn-kindle").onclick = async () => {
+  const email = $("kindle").value.trim();
+  if (!/^[^@\s]+@(free\.)?kindle\.com$/i.test(email)) { toast("Debe acabar en @kindle.com"); haptic("error"); return; }
+  $("btn-kindle").disabled = true;
+  try {
+    perfil = await api("set_kindle", { email });
+    $("kindle-setup").dataset.editing = "0";
+    haptic("success"); toast("Correo de Kindle guardado");
+    renderPedir();
+  } catch (e) { toast(e.message); haptic("error"); }
+  $("btn-kindle").disabled = false;
+};
+$("btn-cambiar-kindle").onclick = () => {
+  $("kindle").value = perfil.kindle_email || "";
+  $("kindle-setup").dataset.editing = "1"; renderPedir();
+};
+$("btn-kindle-cancel").onclick = () => { $("kindle-setup").dataset.editing = "0"; renderPedir(); };
+
+$("form-pedir").onsubmit = async (ev) => {
+  ev.preventDefault();
+  const titulo = $("titulo").value.trim(), autor = $("autor").value.trim();
+  if (!titulo) return;
+  $("btn-pedir").disabled = true; $("btn-pedir").textContent = "Enviando…";
+  try {
+    await api("pedir", { titulo, autor });
+    haptic("success");
+    $("titulo").value = ""; $("autor").value = "";
+    toast("📚 Pedido enviado. Sigue su estado en Biblioteca.");
+    show("biblioteca");
+  } catch (e) { toast(e.message); haptic("error"); }
+  $("btn-pedir").disabled = false; $("btn-pedir").textContent = "Pedir libro";
+};
+
+// ------------------------------------------------------------ Biblioteca
+const COLORS = ["#8a5a2b", "#3b6ea8", "#2e7d4f", "#7b4d8f", "#b7791f", "#a63d40", "#456b6b"];
+function coverColor(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COLORS[h % COLORS.length]; }
+function fecha(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("es-ES", { day: "numeric", month: "short" }) + " · " +
+         d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+}
+
+function renderLista() {
+  const lista = $("lista");
+  let items = pedidos.filter((p) => p.estado !== "cancelado");
+  if (filtro === "camino") items = items.filter((p) => EN_CAMINO.includes(p.estado));
+  if (filtro === "guardados") items = items.filter((p) => p.estado === "enviado");
+  if (!items.length) {
+    const msg = { todos: "Aún no has pedido ningún libro.", camino: "No hay libros en camino.", guardados: "Todavía no tienes libros guardados." }[filtro];
+    lista.innerHTML = `<div class="empty"><div class="big">📖</div>${msg}</div>`;
+    return;
+  }
+  lista.innerHTML = items.map((p) => {
+    const e = ESTADOS[p.estado] || ESTADOS.nuevo;
+    const ini = (p.titulo.trim()[0] || "?").toUpperCase();
+    return `<div class="card book">
+      <div class="cover" style="background:${coverColor(p.titulo)}">${esc(ini)}</div>
+      <div class="info">
+        <div class="t">${esc(p.titulo)}</div>
+        ${p.autor ? `<div class="a">${esc(p.autor)}</div>` : ""}
+        <span class="badge" style="background:${e.color}">${e.txt}</span>
+        ${p.paso ? `<div class="paso">${esc(p.paso)}</div>` : ""}
+        <div class="paso">${fecha(p.created_at)}</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+async function cargarBiblioteca(silencioso = false) {
+  if (!silencioso && !pedidos.length) $("lista").innerHTML = '<div class="spinner"></div>';
+  try {
+    const r = await api("biblioteca");
+    perfil = r.perfil; pedidos = r.pedidos;
+    renderLista();
+  } catch (e) { if (!silencioso) $("lista").innerHTML = `<div class="card notice err">${esc(e.message)}</div>`; }
+}
+
+document.querySelectorAll(".chip").forEach((c) => c.onclick = () => {
+  document.querySelectorAll(".chip").forEach((x) => x.classList.toggle("active", x === c));
+  filtro = c.dataset.f; renderLista();
+});
+
+// ------------------------------------------------------------ Navegación
+function show(p) {
+  pagina = p;
+  document.querySelectorAll(".page").forEach((s) => s.classList.toggle("active", s.id === "page-" + p));
+  document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("active", b.dataset.page === p));
+  $("title").textContent = p === "pedir" ? "Pedir libro" : "Biblioteca";
+  $("subtitle").textContent = p === "pedir" ? "Lo buscamos y te llega al Kindle" : "Tus libros pedidos y guardados";
+  clearInterval(pollTimer);
+  if (p === "biblioteca") {
+    cargarBiblioteca();
+    pollTimer = setInterval(() => document.visibilityState === "visible" && cargarBiblioteca(true), 5000);
+  } else renderPedir();
+  try { tg?.HapticFeedback?.selectionChanged(); } catch {}
+}
+document.querySelectorAll("nav button").forEach((b) => b.onclick = () => show(b.dataset.page));
+
+// Acceso directo en la pantalla de inicio (Telegram 8.0+)
+function setupHomeScreen() {
+  if (!tg?.addToHomeScreen || !tg.isVersionAtLeast?.("8.0")) return;
+  tg.checkHomeScreenStatus?.((status) => {
+    if (status === "missed" || status === "unknown") $("home-card").hidden = false;
+  });
+  $("btn-home").onclick = () => tg.addToHomeScreen();
+  tg.onEvent?.("homeScreenAdded", () => { $("home-card").hidden = true; toast("✅ Acceso directo añadido"); });
+}
+
+// ------------------------------------------------------------ Inicio
+(async function init() {
+  tg?.ready(); tg?.expand();
+  try { tg?.setHeaderColor?.("secondary_bg_color"); tg?.setBackgroundColor?.("secondary_bg_color"); } catch {}
+  if (!tg?.initData) {
+    $("loading").hidden = true;
+    $("fatal").hidden = false;
+    $("fatal").innerHTML = "<b>Abre esta app desde Telegram</b><p style='margin:4px 0 0'>Entra en el chat del bot de libros y pulsa el botón «Libros».</p>";
+    return;
+  }
+  try {
+    perfil = await api("me");
+    $("loading").hidden = true;
+    show("pedir");
+    setupHomeScreen();
+  } catch (e) {
+    $("loading").hidden = true;
+    $("fatal").hidden = false;
+    $("fatal").innerHTML = `<b>No se pudo conectar</b><p style="margin:4px 0 0">${esc(e.message)}</p>`;
+  }
+})();
+</script>
+</body>
+</html>
