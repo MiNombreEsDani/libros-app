@@ -1,39 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#ffffff"/>
-  <g fill="#ffffff" stroke="#111111" stroke-width="11" stroke-linejoin="round" stroke-linecap="round">
-    <!-- Hombros y torso -->
-    <path d="M116 470 L116 392 C116 344 150 312 200 306 L312 306 C362 312 396 344 396 392 L396 470"/>
-    <!-- Cuello -->
-    <path d="M230 262 L230 306 M282 262 L282 306"/>
-    <line x1="224" y1="284" x2="288" y2="284"/>
-    <!-- Antena -->
-    <line x1="256" y1="96" x2="256" y2="70"/>
-    <rect x="244" y="58" width="24" height="14" rx="5"/>
-    <!-- Laterales del casco -->
-    <rect x="160" y="150" width="22" height="64" rx="8"/>
-    <rect x="330" y="150" width="22" height="64" rx="8"/>
-    <!-- Casco -->
-    <path d="M182 250 L182 160 C182 118 214 96 256 96 C298 96 330 118 330 160 L330 250 C330 262 320 270 308 270 L204 270 C192 270 182 262 182 250 Z"/>
-    <!-- Línea de la mandíbula -->
-    <path d="M206 234 L306 234"/>
-  </g>
-  <!-- Visor -->
-  <rect x="200" y="150" width="112" height="46" rx="18" fill="#111111"/>
-  <rect x="218" y="169" width="76" height="8" rx="4" fill="#d62828"/>
-
-  <!-- Libro: solo la portada, negro (vertical, con lomo y marcapáginas) -->
-  <path d="M276 470 L276 500 L286 492 L296 500 L296 470 Z" fill="#d62828"/>
-  <rect x="184" y="304" width="144" height="170" rx="7" fill="#111111"/>
-  <rect x="184" y="304" width="20" height="170" rx="5" fill="#2b2b2b"/>
-  <line x1="204" y1="306" x2="204" y2="472" stroke="#000" stroke-width="2"/>
-  <line x1="232" y1="352" x2="300" y2="352" stroke="#ffffff" stroke-opacity=".7" stroke-width="5" stroke-linecap="round"/>
-  <line x1="244" y1="368" x2="288" y2="368" stroke="#ffffff" stroke-opacity=".4" stroke-width="3" stroke-linecap="round"/>
-
-  <!-- Manos sujetando el libro por los lados -->
-  <g fill="#ffffff" stroke="#111111" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
-    <rect x="148" y="372" width="54" height="76" rx="16"/>
-    <path d="M168 392 L202 392 M168 410 L202 410 M168 428 L202 428"/>
-    <rect x="310" y="372" width="54" height="76" rx="16"/>
-    <path d="M310 392 L344 392 M310 410 L344 410 M310 428 L344 428"/>
-  </g>
+  <!-- Marcapáginas rojo -->
+  <path d="M290 420 L290 474 L310 458 L330 474 L330 420 Z" fill="#d62828"/>
+  <!-- Portada -->
+  <rect x="146" y="70" width="230" height="362" rx="12" fill="#111111"/>
+  <!-- Lomo -->
+  <rect x="146" y="70" width="34" height="362" rx="8" fill="#2b2b2b"/>
+  <line x1="180" y1="74" x2="180" y2="428" stroke="#000000" stroke-width="3"/>
+  <!-- Título -->
+  <line x1="226" y1="176" x2="332" y2="176" stroke="#ffffff" stroke-opacity=".75" stroke-width="8" stroke-linecap="round"/>
+  <line x1="246" y1="202" x2="312" y2="202" stroke="#ffffff" stroke-opacity=".4" stroke-width="5" stroke-linecap="round"/>
 </svg>
