@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fondo -->
+  <rect width="512" height="512" fill="#ffffff"/>
+
+  <!-- Antena -->
+  <line x1="256" y1="104" x2="256" y2="66" stroke="#d62828" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="256" cy="56" r="17" fill="#1d6fd8"/>
+  <circle cx="251" cy="51" r="5" fill="#ffffff" opacity=".8"/>
+
+  <!-- Orejas -->
+  <rect x="112" y="150" width="30" height="74" rx="12" fill="#1d6fd8"/>
+  <rect x="370" y="150" width="30" height="74" rx="12" fill="#1d6fd8"/>
+
+  <!-- Cabeza -->
+  <rect x="134" y="100" width="244" height="176" rx="56" fill="#d62828"/>
+  <!-- Pantalla de la cara -->
+  <rect x="166" y="134" width="180" height="108" rx="40" fill="#ffffff"/>
+  <!-- Ojos -->
+  <circle cx="218" cy="180" r="17" fill="#1d6fd8"/>
+  <circle cx="294" cy="180" r="17" fill="#1d6fd8"/>
+  <circle cx="223" cy="174" r="5" fill="#ffffff"/>
+  <circle cx="299" cy="174" r="5" fill="#ffffff"/>
+  <!-- Sonrisa -->
+  <path d="M230 212 Q256 232 282 212" fill="none" stroke="#d62828" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- Cuello -->
+  <rect x="232" y="270" width="48" height="26" rx="8" fill="#b71f1f"/>
+
+  <!-- Cuerpo -->
+  <rect x="146" y="288" width="220" height="164" rx="48" fill="#d62828"/>
+
+  <!-- Libro abierto (verde) -->
+  <path d="M256 344 C222 322 172 318 120 330 L120 448 C172 436 222 440 256 462 Z" fill="#2ba84a"/>
+  <path d="M256 344 C290 322 340 318 392 330 L392 448 C340 436 290 440 256 462 Z" fill="#2ba84a"/>
+  <!-- Páginas -->
+  <path d="M248 352 C220 336 178 332 136 340 L136 432 C178 424 220 428 248 446 Z" fill="#e9f7ed"/>
+  <path d="M264 352 C292 336 334 332 376 340 L376 432 C334 424 292 428 264 446 Z" fill="#e9f7ed"/>
+  <!-- Líneas de texto -->
+  <g fill="none" stroke="#9fd8b0" stroke-width="6" stroke-linecap="round">
+    <path d="M160 364 Q196 358 230 370"/>
+    <path d="M160 386 Q196 380 230 392"/>
+    <path d="M160 408 Q196 402 230 414"/>
+    <path d="M282 370 Q316 358 352 364"/>
+    <path d="M282 392 Q316 380 352 386"/>
+    <path d="M282 414 Q316 402 352 408"/>
+  </g>
+  <!-- Lomo -->
+  <line x1="256" y1="346" x2="256" y2="460" stroke="#1f7f37" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Manos (azul) sujetando el libro -->
+  <circle cx="122" cy="392" r="24" fill="#1d6fd8"/>
+  <circle cx="390" cy="392" r="24" fill="#1d6fd8"/>
+</svg>
