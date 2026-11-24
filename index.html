@@ -151,8 +151,8 @@
     </div>
 
     <div id="home-card" class="card row" hidden>
-      <div><b>📲 Acceso directo</b><div class="muted">Añade la app a la pantalla de inicio</div></div>
-      <button class="link" id="btn-home">Añadir</button>
+      <div><b>📲 Instalar como app</b><div class="muted">Ábrela con su propio icono, sin pasar por Telegram</div></div>
+      <button class="link" id="btn-home">Instalar</button>
     </div>
   </section>
 
@@ -340,13 +340,14 @@ function show(p) {
 document.querySelectorAll("nav button").forEach((b) => b.onclick = () => show(b.dataset.page));
 
 // Acceso directo en la pantalla de inicio (Telegram 8.0+)
+// Dentro de Telegram: abre la versión web en el navegador del móvil/ordenador para instalarla
+const WEB_URL = "https://minombreesdani.github.io/libros-app/";
 function setupHomeScreen() {
-  if (!tg?.addToHomeScreen || !tg.isVersionAtLeast?.("8.0")) return;
-  tg.checkHomeScreenStatus?.((status) => {
-    if (status === "missed" || status === "unknown") $("home-card").hidden = false;
-  });
-  $("btn-home").onclick = () => tg.addToHomeScreen();
-  tg.onEvent?.("homeScreenAdded", () => { $("home-card").hidden = true; toast("✅ Acceso directo añadido"); });
+  $("home-card").hidden = false;
+  $("btn-home").onclick = () => {
+    const url = WEB_URL + "?instalar=1";
+    if (tg?.openLink) tg.openLink(url); else window.open(url, "_blank");
+  };
 }
 
 // ------------------------------------------------------------ Navegador: acceso e instalación
@@ -370,9 +371,23 @@ async function mostrarLogin(msg) {
     sc.dataset.size = "large";
     sc.dataset.radius = "12";
     sc.dataset.requestAccess = "write";
-    sc.dataset.onauth = "onTelegramAuth(user)";
+    sc.dataset.authUrl = location.origin + location.pathname;
     $("tg-widget").appendChild(sc);
   } catch (e) { $("login-msg").textContent = "No se pudo cargar el acceso: " + e.message; }
+}
+
+// Vuelta del inicio de sesión de Telegram: los datos llegan en la dirección (?id=...&hash=...)
+function leerLoginDeLaUrl() {
+  const q = new URLSearchParams(location.search);
+  if (q.get("instalar") === "1") { try { localStorage.setItem("libros_instalar", "1"); } catch {} }
+  if (q.get("hash") && q.get("id")) {
+    const user = {};
+    for (const k of ["id", "first_name", "last_name", "username", "photo_url", "auth_date", "hash"]) {
+      if (q.get(k) !== null) user[k] = q.get(k);
+    }
+    store.set(user);
+  }
+  if (q.toString()) history.replaceState(null, "", location.pathname);
 }
 
 window.onTelegramAuth = (user) => {
@@ -393,14 +408,23 @@ function setupWeb() {
   $("logout-card").hidden = false;
   $("btn-logout").onclick = () => { store.clear(); location.reload(); };
   const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  if (standalone) return;
+  const ua = navigator.userAgent;
+  const ios = /iphone|ipad|ipod/i.test(ua);
+  const safari = ios && !/crios|fxios|edgios|telegram/i.test(ua);
+  let pidio = false; try { pidio = localStorage.getItem("libros_instalar") === "1"; } catch {}
+  if (standalone) { try { localStorage.removeItem("libros_instalar"); } catch {} return; }
   if (installEvt) $("install-card").hidden = false;
   else if (ios) {
     $("install-card").hidden = false;
-    $("install-txt").textContent = "En Safari: botón Compartir → «Añadir a pantalla de inicio»";
+    $("install-txt").innerHTML = safari
+      ? "Pulsa el botón <b>Compartir</b> (cuadrado con flecha) y luego <b>«Añadir a pantalla de inicio»</b>."
+      : "Abre esta página en <b>Safari</b> y allí: Compartir → «Añadir a pantalla de inicio».";
     $("btn-install").hidden = true;
+  } else if (pidio) {
+    $("install-card").hidden = false;
+    $("install-txt").innerHTML = "En el menú del navegador (⋮) elige <b>«Instalar app»</b> o <b>«Añadir a pantalla de inicio»</b>.";
   }
+  if (pidio && !$("install-card").hidden) $("install-card").scrollIntoView({ behavior: "smooth", block: "center" });
   $("btn-install").onclick = async () => {
     if (!installEvt) { toast("Usa el menú del navegador → «Instalar Libros»"); return; }
     installEvt.prompt(); await installEvt.userChoice; installEvt = null;
@@ -427,6 +451,7 @@ async function arrancar() {
   try { tg?.ready?.(); tg?.expand?.(); } catch {}
   try { tg?.setHeaderColor?.("secondary_bg_color"); tg?.setBackgroundColor?.("secondary_bg_color"); } catch {}
   if ("serviceWorker" in navigator && !enTelegram()) navigator.serviceWorker.register("sw.js").catch(() => {});
+  if (!enTelegram()) leerLoginDeLaUrl();
   if (!enTelegram() && !store.get()) { mostrarLogin(); return; }
   arrancar();
 })();

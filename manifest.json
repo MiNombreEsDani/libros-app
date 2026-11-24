@@ -2,6 +2,8 @@
   "name": "Libros",
   "short_name": "Libros",
   "start_url": "./",
+  "scope": "./",
+  "id": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
