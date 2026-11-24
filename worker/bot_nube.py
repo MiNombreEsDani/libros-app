@@ -240,7 +240,7 @@ async def send_email(path: Path, to: str, req: dict) -> bool:
                    estado="descargado")
         log.warning("Error SMTP: %s", e)
         return False
-    await step(req, f"✅ Enviado a {to}. En unos minutos lo tendrás en el Kindle.",
+    await step(req, f"✅ Enviado a {to}. Si Amazon lo acepta, aparecerá en el Kindle en unos minutos.",
                estado="enviado", destino=to, archivo=path.name)
     return True
 
