@@ -58,10 +58,23 @@ async function setConfig(clave: string, valor: string) {
   if (error) throw new HttpError(500, error.message);
 }
 
+// Despierta al trabajador de GitHub al momento (si hay token configurado; si no, espera a su ronda)
+async function despertarTrabajador() {
+  const token = await getConfig("gh_token");
+  if (!token) return;
+  try {
+    await fetch("https://api.github.com/repos/MiNombreEsDani/libros-app/dispatches", {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json", "user-agent": "libros-app" },
+      body: JSON.stringify({ event_type: "pedido" }),
+    });
+  } catch (_) { /* no es grave: la ronda programada lo recogerá */ }
+}
+
 // ---------------------------------------------------------------- Telegram
 async function telegramUser(initData: string) {
   const token = await getConfig("bot_token");
-  if (!token) throw new HttpError(503, "El bot aún no se ha conectado. Arranca el bot en el ordenador.");
+  if (!token) throw new HttpError(503, "El bot aún no está configurado.");
   const params = new URLSearchParams(initData);
   const hash = params.get("hash");
   if (!hash) throw new HttpError(401, "Inicia sesión para continuar.");
@@ -83,7 +96,7 @@ async function telegramUser(initData: string) {
 // https://core.telegram.org/widgets/login#checking-authorization
 async function telegramWebLogin(raw: string) {
   const token = await getConfig("bot_token");
-  if (!token) throw new HttpError(503, "El bot aún no se ha conectado. Arranca el bot en el ordenador.");
+  if (!token) throw new HttpError(503, "El bot aún no está configurado.");
   let data: Record<string, unknown>;
   try { data = JSON.parse(raw); } catch { throw new HttpError(401, "Inicio de sesión no válido."); }
   const hash = String(data.hash || "");
@@ -157,9 +170,10 @@ async function appAction(action: string, body: any, initData: string, webLogin: 
         .eq("tg_id", tg.id).gte("created_at", since);
       if ((count ?? 0) >= 15) throw new HttpError(429, "Has llegado al máximo de 15 pedidos al día.");
       const { data, error } = await db.from("pedidos")
-        .insert({ tg_id: tg.id, titulo, autor: autor || null, paso: "Esperando a que el bot lo recoja" })
+        .insert({ tg_id: tg.id, titulo, autor: autor || null, paso: "En cola: el bot lo recogerá en unos minutos" })
         .select().single();
       if (error) throw new HttpError(500, error.message);
+      await despertarTrabajador();
       return data;
     }
 
@@ -177,6 +191,9 @@ async function appAction(action: string, body: any, initData: string, webLogin: 
 }
 
 // ---------------------------------------------------------------- Bot
+// Claves de config que el trabajador puede leer/escribir
+const CONFIG_BOT = ["ultimo_msg_id", "probar_correo", "ultima_ronda", "ultimo_error"];
+
 const ESTADOS = ["nuevo", "buscando", "solicitado", "descargado", "enviado", "error", "cancelado"];
 
 async function botAction(action: string, body: any) {
@@ -218,7 +235,7 @@ async function botAction(action: string, body: any) {
         if (!ESTADOS.includes(body.estado)) throw new HttpError(400, "estado no válido");
         patch.estado = body.estado;
       }
-      for (const k of ["paso", "archivo", "destino"]) if (k in body) patch[k] = body[k];
+      for (const k of ["paso", "archivo", "destino", "request_msg_id", "archivo_msg_id"]) if (k in body) patch[k] = body[k];
       const { error } = await db.from("pedidos").update(patch).eq("id", id);
       if (error) throw new HttpError(500, error.message);
       return { ok: true };
@@ -234,6 +251,39 @@ async function botAction(action: string, body: any) {
       }).select().single();
       if (error) throw new HttpError(500, error.message);
       return data;
+    }
+
+    case "solicitados":
+    case "reintentos": {
+      // solicitados: pedidos publicados en el grupo, esperando a que alguien suba el libro
+      // reintentos: libros ya localizados cuyo envío por correo falló
+      const estado = action === "solicitados" ? "solicitado" : "descargado";
+      const { data, error } = await db.from("pedidos")
+        .select("id,tg_id,titulo,autor,request_msg_id,archivo_msg_id,created_at,usuarios(kindle_email,es_dueno,nombre)")
+        .eq("estado", estado).order("id");
+      if (error) throw new HttpError(500, error.message);
+      return {
+        pedidos: (data ?? []).map((p: any) => ({
+          ...p, kindle_email: p.usuarios?.kindle_email, es_dueno: p.usuarios?.es_dueno, nombre: p.usuarios?.nombre,
+          usuarios: undefined,
+        })),
+      };
+    }
+
+    case "get_config": {
+      const out: Record<string, string | null> = {};
+      for (const k of (body.claves ?? []) as string[]) {
+        if (CONFIG_BOT.includes(k)) out[k] = await getConfig(k);
+      }
+      return out;
+    }
+
+    case "set_config": {
+      const k = String(body.clave);
+      if (!CONFIG_BOT.includes(k)) throw new HttpError(400, "clave no permitida");
+      if (body.valor === null || body.valor === undefined) await db.from("config").delete().eq("clave", k);
+      else await setConfig(k, String(body.valor));
+      return { ok: true };
     }
 
     case "usuarios": {
