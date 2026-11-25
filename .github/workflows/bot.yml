@@ -1,11 +1,11 @@
 name: Bot de libros
 
+# Lo despierta Supabase: al momento cuando hay un pedido o un usuario nuevo,
+# y una vez al día (pg_cron) para revisar el grupo y reintentar envíos.
 on:
-  schedule:
-    - cron: "*/5 * * * *"        # cada 5 minutos (GitHub puede retrasarlo un poco)
   workflow_dispatch:              # botón "Run workflow" para lanzarlo a mano
   repository_dispatch:
-    types: [pedido]               # la app lo despierta al momento si hay token configurado
+    types: [pedido]
 
 concurrency:
   group: bot-libros               # nunca dos rondas a la vez
@@ -13,7 +13,6 @@ concurrency:
 
 permissions:
   contents: read
-  actions: write                  # para mantener activa la programación (ver último paso)
 
 jobs:
   ronda:
@@ -38,9 +37,3 @@ jobs:
       - name: Ronda del bot
         if: env.CONFIG_BOT != ''
         run: python worker/bot_nube.py
-      - name: Mantener activa la programación
-        # GitHub pausa las tareas programadas tras 60 días sin cambios en el repositorio.
-        if: always() && github.event_name == 'schedule'
-        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/bot.yml/enable" || true
-        env:
-          GH_TOKEN: ${{ github.token }}
